@@ -166,5 +166,38 @@ AND t2.industry IS NOT NULL;
 ALTER TABLE layoff_staging2
 DROP COLUMN row_num;
 
+-- Verification
+
 SELECT *
 FROM layoff_staging2;
+
+-- Duplicates have increased lets repeat step 1 :
+
+CREATE TABLE `layoff_final` (
+  `company` text,
+  `location` text,
+  `industry` text,
+  `total_laid_off` int DEFAULT NULL,
+  `percentage_laid_off` text,
+  `date` date DEFAULT NULL,
+  `stage` text,
+  `country` text,
+  `funds_raised_millions` int DEFAULT NULL,
+  `row_num` int
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+INSERT INTO layoff_final
+SELECT *,
+ROW_NUMBER() OVER(PARTITION BY company,location,industry,total_laid_off,`date`,stage,country,funds_raised_millions) AS row_num
+FROM layoff_staging2;
+
+SELECT *
+FROM layoff_final
+WHERE row_num > 1;
+
+DELETE
+FROM layoff_final
+WHERE row_num > 1;
+
+SELECT *
+FROM layoff_final;
